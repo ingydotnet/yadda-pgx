@@ -1,0 +1,78 @@
+---
++grammar: yadda
++toprule: yadda_document
++version: 0.0.1
+EOL:
+  .rgx: \r?\n
+block_key:
+  .rgx: ((?:'''|""")\r?\nXXX|['"]\r?\nXXX|"[^"]*"|'[^']*'|(?![&\*\#\{\}\[\]%`\@]).+?(?=\r?\n|\z))(?=:(?:\
+    +|\ *(?=\r?\n)))
+block_mapping:
+  .all:
+  - .ref: block_indent
+  - +min: 1
+    .ref: block_mapping_pair
+  - .ref: block_undent
+block_mapping_pair:
+  .all:
+  - .ref: block_ondent
+  - .ref: block_key
+  - .ref: block_mapping_separator
+  - .ref: block_value
+block_mapping_separator:
+  .rgx: :(?:\ +|\ *(?=\r?\n))
+block_node:
+  .any:
+  - .ref: block_sequence
+  - .ref: block_mapping
+  - .ref: block_scalar
+block_scalar:
+  .rgx: ((?:'''|""")\r?\nXXX|['"]\r?\nXXX|"[^"]*"|'[^']*'|(?![&\*\#\{\}\[\]%`\@]).+?(?=\r?\n|\z))
+block_sequence:
+  +min: 1
+  .ref: block_sequence_entry
+block_sequence_entry:
+  .rgx: \-\ +((?:'''|""")\r?\nXXX|['"]\r?\nXXX|"[^"]*"|'[^']*'|(?![&\*\#\{\}\[\]%`\@]).+?(?=\r?\n|\z))\r?\n
+block_value:
+  .any:
+  - .ref: empty_flow_mapping
+  - .ref: flow_sequence
+  - .ref: block_node
+empty_flow_mapping:
+  .rgx: \{\}
+flow_sequence:
+  .all:
+  - .ref: flow_sequence_start
+  - +max: 1
+    .all:
+    - .ref: flow_sequence_entry
+    - +min: 0
+      -flat: 1
+      .all:
+      - .ref: list_separator
+      - .ref: flow_sequence_entry
+  - .ref: flow_sequence_end
+flow_sequence_end:
+  .rgx: \ *\]\ *
+flow_sequence_entry:
+  .ref: flow_scalar
+flow_sequence_start:
+  .rgx: \ *\[\ *
+ignore_line:
+  .rgx: (?:\#.*|[\ \t]*)(?=\r?\n)
+list_separator:
+  .rgx: ',\ +'
+top_node:
+  .all:
+  - .any:
+    - .ref: block_sequence
+    - .ref: block_mapping
+  - +max: 1
+    .ref: EOL
+yadda_document:
+  .all:
+  - +min: 0
+    .ref: ignore_line
+  - .ref: top_node
+  - +min: 0
+    .ref: ignore_line
